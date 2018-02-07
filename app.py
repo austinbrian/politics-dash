@@ -27,7 +27,20 @@ import pandas as pd
 from regressions import get_data, comb_vars
 
 # Start by just importing the data, including a y-var (clinton_win)
-df, y_var = get_data('./data/president_counties.csv')
+def get_data(filepath):
+    df = pd.read_csv(filepath)
+    df['inc_per_filer'] = df.AGI/df.num_returns
+    df['inc_per_capita'] = df.AGI/df.people
+    df['clinton_win'] = 0
+    df.loc[df.clinton>df.trump,'clinton_win'] = 1 # set up target variable
+    test_cols = df.columns[8:-1]
+    y_var = df.clinton_win
+    test_df = df[test_cols]
+    id_df = df[df.columns[:3]]
+
+    return id_df, test_df, y_var
+
+id_df, df, y_var = get_data('./data/president_counties.csv')
 
 # get a dictionary of scores 
 scores = comb_vars(df, y_var)
@@ -47,7 +60,7 @@ sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 app = dash.Dash()
 
 
-available_indicators = df['Indicator Name'].unique()
+available_indicators = df.columns
 
 app.layout = html.Div([
     html.Div([
@@ -56,7 +69,7 @@ app.layout = html.Div([
             dcc.Dropdown(
                 id='crossfilter-xaxis-column',
                 options=[{'label': i, 'value': i} for i in available_indicators],
-                value='Fertility rate, total (births per woman)'
+                value='AGI'
             ),
             dcc.RadioItems(
                 id='crossfilter-xaxis-type',
@@ -71,7 +84,7 @@ app.layout = html.Div([
             dcc.Dropdown(
                 id='crossfilter-yaxis-column',
                 options=[{'label': i, 'value': i} for i in available_indicators],
-                value='Life expectancy at birth, total (years)'
+                value='people'
             ),
             dcc.RadioItems(
                 id='crossfilter-yaxis-type',
@@ -89,7 +102,7 @@ app.layout = html.Div([
     html.Div([
         dcc.Graph(
             id='crossfilter-indicator-scatter',
-            hoverData={'points': [{'customdata': 'Japan'}]}
+            hoverData={'points': [{'customdata': 'Orange County, CA'}]}
         )
     ], style={'width': '49%', 'display': 'inline-block', 'padding': '0 20'}),
     html.Div([
@@ -196,4 +209,4 @@ def update_x_timeseries(hoverData, yaxis_column_name, axis_type):
 
 
 if __name__ == '__main__':
-    app.run_server()ass
+    app.run_server(debug=True)
