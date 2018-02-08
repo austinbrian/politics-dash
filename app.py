@@ -36,8 +36,9 @@ def get_data(filepath):
     test_cols = df.columns[8:-1]
     y_var = df.clinton_win
     test_df = df[test_cols]
-    id_df = df[df.columns[:3]]
-
+    id_df = df[df.columns[:8]]
+    id_df['winner'] = 'Trump'
+    id_df.loc[df.index[clinton_win ==1], 'winner'] = "Clinton"
     return id_df, test_df, y_var
 
 id_df, df, y_var = get_data('./data/president_counties.csv')
@@ -110,13 +111,7 @@ app.layout = html.Div([
         dcc.Graph(id='y-time-series'),
     ], style={'display': 'inline-block', 'width': '49%'}),
 
-    html.Div(dcc.Slider(
-        id='crossfilter-year--slider',
-        min=df['Year'].min(),
-        max=df['Year'].max(),
-        value=df['Year'].max(),
-        step=None,
-        marks={str(year): str(year) for year in df['Year'].unique()}
+    html.Div(dcc.Graph(id='regression-result')
     ), style={'width': '49%', 'padding': '0px 20px 20px 20px'})
 ])
 
@@ -127,15 +122,13 @@ app.layout = html.Div([
      dash.dependencies.Input('crossfilter-yaxis-column', 'value'),
      dash.dependencies.Input('crossfilter-xaxis-type', 'value'),
      dash.dependencies.Input('crossfilter-yaxis-type', 'value'),
-     dash.dependencies.Input('crossfilter-year--slider', 'value')])
 def update_graph(xaxis_column_name, yaxis_column_name,
-                 xaxis_type, yaxis_type,
-                 year_value):
-    dff = df[df['Year'] == year_value]
+                 xaxis_type, yaxis_type
+                 ):
 
     return {
         'data': [go.Scatter(
-            x=dff[dff['Indicator Name'] == xaxis_column_name]['Value'],
+            x=dff[dff.loc['Indicator Name'] == xaxis_column_name]['Value'],
             y=dff[dff['Indicator Name'] == yaxis_column_name]['Value'],
             text=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
             customdata=dff[dff['Indicator Name'] == yaxis_column_name]['Country Name'],
@@ -183,7 +176,7 @@ def create_time_series(dff, axis_type, title):
         }
     }
 
-
+# update this to be the bar chart on the right
 @app.callback(
     dash.dependencies.Output('x-time-series', 'figure'),
     [dash.dependencies.Input('crossfilter-indicator-scatter', 'hoverData'),
@@ -196,7 +189,7 @@ def update_y_timeseries(hoverData, xaxis_column_name, axis_type):
     title = '<b>{}</b><br>{}'.format(country_name, xaxis_column_name)
     return create_time_series(dff, axis_type, title)
 
-
+# update this to be the underneath
 @app.callback(
     dash.dependencies.Output('y-time-series', 'figure'),
     [dash.dependencies.Input('crossfilter-indicator-scatter', 'hoverData'),

@@ -10,7 +10,7 @@ def get_data(filepath):
     test_cols = df.columns[8:-1]
     y_var = df.clinton_win
     test_df = df[test_cols]
-    id_df = df[df.columns[:3]]
+    id_df = df[df.columns[:8]]
     id_df['winner'] = 'Trump'
     id_df.loc[df.index[clinton_win ==1], 'winner'] = "Clinton"
     return id_df, test_df, y_var
